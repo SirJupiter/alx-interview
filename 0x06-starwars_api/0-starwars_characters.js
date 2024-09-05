@@ -1,20 +1,29 @@
 #!/usr/bin/node
-
+//"""Making request in node"""
 const request = require('request');
 
-request(
-  'https://swapi-api.hbtn.io/api/films/' + process.argv[2],
-  function (err, res, body) {
-    if (err) throw err;
-    const actors = JSON.parse(body).characters;
-    exactOrder(actors, 0);
+const BASE_URL = 'https://swapi-api.alx-tools.com/api/';
+
+const movieId = +process.argv[2];
+
+request(`${BASE_URL}films/${movieId}`, (err, response, body) => {
+  if (err) {
+    console.log(err);
   }
-);
-const exactOrder = (actors, x) => {
-  if (x === actors.length) return;
-  request(actors[x], function (err, res, body) {
-    if (err) throw err;
-    console.log(JSON.parse(body).name);
-    exactOrder(actors, x + 1);
-  });
-};
+  const characters = JSON.parse(body).characters;
+  const name = characters.map(
+    (lnk) =>
+      new Promise((resolve, reject) => {
+        request(lnk, (err, response, body) => {
+          if (err) {
+            reject(err);
+          }
+          const info = JSON.parse(body);
+          resolve(info.name);
+        });
+      })
+  );
+  Promise.all(name)
+    .then((names) => console.log(names.join('\n')))
+    .catch((x) => console.log(err));
+});
